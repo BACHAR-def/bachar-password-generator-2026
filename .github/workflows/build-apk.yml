@@ -12,23 +12,24 @@ jobs:
       - name: Recuperer le projet
         uses: actions/checkout@v4
 
-      - name: Installer Java et Android SDK
+      - name: Installer Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Installer les outils Android
+      - name: Installer Android SDK
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$SDK/cmdline-tools"
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
           unzip -q tools.zip
-          mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
-          mv cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          mkdir -p "$SDK/cmdline-tools/latest"
+          mv cmdline-tools/* "$SDK/cmdline-tools/latest/"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" --licenses
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Installer Buildozer
         run: |
