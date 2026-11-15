@@ -24,5 +24,6 @@ log_level = 2
 warn_on_root = 1
 
 android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+android.sdk_tools = cmdline-tools/latest
 android.api = 33
 android.minapi = 21
