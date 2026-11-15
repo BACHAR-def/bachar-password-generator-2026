@@ -13,7 +13,9 @@ version = 1.0
 icon.filename = %(source.dir)s/file_000000006edc820ea88cece3dae54ce0.png
 
 requirements = python3,kivy,cryptography
- android.archs = arm64-v8a
+
+android.archs = arm64-v8a
+ 
 orientation = portrait
 fullscreen = 0
 
