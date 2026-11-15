@@ -1,8 +1,14 @@
 
 import os
 import json
-import string
+import base64
 import secrets
+import string
+import hashlib
+
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
 
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -10,216 +16,301 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.popup import Popup
-from kivy.core.clipboard import Clipboard
-from kivy.core.window import Window
-
-from cryptography.fernet import Fernet
 
 
-class BacharApp(App):
+class PasswordApp(App):
 
     def build(self):
-        self.title = "BACHARTELB PASSWORD GENERATOR PRO"
+        self.file = os.path.join(self.user_data_dir, "vault.json")
+        self.entries = []
+        self.key = None
 
-        Window.clearcolor = (0.04, 0.04, 0.06, 1)
-
-        os.makedirs(self.user_data_dir, exist_ok=True)
-
-        self.key_file = os.path.join(
-            self.user_data_dir, "secret.key"
-        )
-        self.history_file = os.path.join(
-            self.user_data_dir, "history.dat"
-        )
-
-        if os.path.exists(self.key_file):
-            with open(self.key_file, "rb") as f:
-                key = f.read()
-        else:
-            key = Fernet.generate_key()
-            with open(self.key_file, "wb") as f:
-                f.write(key)
-
-        self.crypto = Fernet(key)
-        self.history = []
-        self.load_history()
-
-        root = BoxLayout(
+        self.root = BoxLayout(
             orientation="vertical",
             padding=20,
-            spacing=15
-        )
-
-        root.add_widget(Label(
-            text="[b]BACHARTELB[/b]",
-            markup=True,
-            font_size=30,
-            color=(1, 0.75, 0, 1),
-            size_hint_y=None,
-            height=60
-        ))
-
-        root.add_widget(Label(
-            text="PASSWORD GENERATOR PRO",
-            font_size=17,
-            color=(1, 1, 1, 1),
-            size_hint_y=None,
-            height=35
-        ))
-
-        self.password_input = TextInput(
-            hint_text="Votre mot de passe",
-            multiline=False,
-            size_hint_y=None,
-            height=55,
-            font_size=17
-        )
-        root.add_widget(self.password_input)
-
-        self.status = Label(
-            text="Bienvenue dans BACHARTELB PRO",
-            size_hint_y=None,
-            height=40
-        )
-        root.add_widget(self.status)
-
-        self.add_button(
-            root, "GENERER UN MOT DE PASSE",
-            self.generate_password
-        )
-
-        self.add_button(
-            root, "ENREGISTRER",
-            self.save_password
-        )
-
-        self.add_button(
-            root, "COPIER",
-            self.copy_password
-        )
-
-        self.add_button(
-            root, "SHOW HISTORY",
-            self.show_history
-        )
-
-        root.add_widget(Label(
-            text="SECURED WITH FERNET ENCRYPTION",
-            color=(1, 0.75, 0, 1),
-            font_size=12
-        ))
-
-        return root
-
-    def add_button(self, layout, text, callback):
-        btn = Button(
-            text=text,
-            size_hint_y=None,
-            height=55,
-            background_normal="",
-            background_color=(0.55, 0.38, 0.05, 1),
-            color=(1, 1, 1, 1),
-            font_size=15
-        )
-        btn.bind(on_press=callback)
-        layout.add_widget(btn)
-
-    def generate_password(self, instance):
-        characters = (
-            string.ascii_letters
-            + string.digits
-            + "!@#$%&*?"
-        )
-
-        password = "".join(
-            secrets.choice(characters)
-            for _ in range(20)
-        )
-
-        self.password_input.text = password
-        self.status.text = "Mot de passe genere !"
-
-    def save_password(self, instance):
-        password = self.password_input.text.strip()
-
-        if not password:
-            self.status.text = "Entrez un mot de passe !"
-            return
-
-        self.history.append(password)
-        self.save_history()
-        self.status.text = "Mot de passe enregistre !"
-
-    def copy_password(self, instance):
-        password = self.password_input.text
-
-        if password:
-            Clipboard.copy(password)
-            self.status.text = "Mot de passe copie !"
-        else:
-            self.status.text = "Aucun mot de passe !"
-
-    def save_history(self):
-        data = json.dumps(self.history).encode("utf-8")
-        encrypted = self.crypto.encrypt(data)
-
-        with open(self.history_file, "wb") as f:
-            f.write(encrypted)
-
-    def load_history(self):
-        if not os.path.exists(self.history_file):
-            return
-
-        try:
-            with open(self.history_file, "rb") as f:
-                encrypted = f.read()
-
-            data = self.crypto.decrypt(encrypted)
-            self.history = json.loads(
-                data.decode("utf-8")
-            )
-        except Exception:
-            self.history = []
-
-    def show_history(self, instance):
-        content = BoxLayout(
-            orientation="vertical",
-            padding=10,
             spacing=10
         )
 
-        history_text = "\n\n".join(self.history[-20:])
-
-        if not history_text:
-            history_text = "Aucun mot de passe enregistre."
-
-        display = TextInput(
-            text=history_text,
-            readonly=True,
-            multiline=True
-        )
-
-        content.add_widget(display)
-
-        close_btn = Button(
-            text="FERMER",
+        # Utilisation de header au lieu de title
+        self.header = Label(
+            text="BACHARTELB PASSWORD GENERATOR PRO",
+            font_size=20,
             size_hint_y=None,
-            height=50
+            height=60
         )
 
-        content.add_widget(close_btn)
+        self.root.add_widget(self.header)
+        self.show_login()
 
+        return self.root
+
+    def clear(self):
+        self.root.clear_widgets()
+        self.root.add_widget(self.header)
+
+    def field(self, hint, password=False):
+        return TextInput(
+            hint_text=hint,
+            password=password,
+            multiline=False,
+            size_hint_y=None,
+            height=48
+        )
+
+    def button(self, text, callback):
+        b = Button(
+            text=text,
+            size_hint_y=None,
+            height=48
+        )
+        b.bind(on_press=callback)
+        self.root.add_widget(b)
+
+    def derive_key(self, master, salt):
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=600000
+        )
+        return base64.urlsafe_b64encode(
+            kdf.derive(master.encode())
+        )
+
+    def show_login(self):
+        self.clear()
+
+        if not os.path.exists(self.file):
+            self.root.add_widget(
+                Label(text="Crée ton coffre-fort")
+            )
+
+            self.master = self.field(
+                "Mot de passe principal",
+                True
+            )
+            self.pin = self.field(
+                "PIN de 6 chiffres",
+                True
+            )
+
+            self.root.add_widget(self.master)
+            self.root.add_widget(self.pin)
+
+            self.button(
+                "CREER MON COFFRE",
+                self.create_vault
+            )
+
+        else:
+            self.root.add_widget(
+                Label(text="Déverrouiller le coffre")
+            )
+
+            self.master = self.field(
+                "Mot de passe principal",
+                True
+            )
+            self.pin = self.field(
+                "PIN de 6 chiffres",
+                True
+            )
+
+            self.root.add_widget(self.master)
+            self.root.add_widget(self.pin)
+
+            self.button("OUVRIR", self.unlock)
+
+    def create_vault(self, instance):
+        master = self.master.text
+        pin = self.pin.text
+
+        if len(master) < 12:
+            self.message(
+                "Le mot de passe principal doit avoir "
+                "au moins 12 caractères."
+            )
+            return
+
+        if len(pin) != 6 or not pin.isdigit():
+            self.message("Le PIN doit contenir 6 chiffres.")
+            return
+
+        try:
+            salt = secrets.token_bytes(16)
+            self.key = self.derive_key(master, salt)
+            self.entries = []
+
+            data = Fernet(self.key).encrypt(
+                json.dumps(self.entries).encode()
+            )
+
+            with open(self.file, "w") as f:
+                json.dump({
+                    "salt": base64.b64encode(salt).decode(),
+                    "pin_hash": hashlib.sha256(
+                        pin.encode()
+                    ).hexdigest(),
+                    "data": data.decode()
+                }, f)
+
+            self.show_home()
+
+        except Exception as e:
+            self.message("Erreur de création : " + str(e))
+
+    def unlock(self, instance):
+        try:
+            with open(self.file, "r") as f:
+                saved = json.load(f)
+
+            pin = self.pin.text
+
+            if hashlib.sha256(
+                pin.encode()
+            ).hexdigest() != saved["pin_hash"]:
+                self.message("PIN incorrect.")
+                return
+
+            salt = base64.b64decode(saved["salt"])
+            self.key = self.derive_key(
+                self.master.text,
+                salt
+            )
+
+            encrypted = saved["data"].encode()
+            plain = Fernet(self.key).decrypt(encrypted)
+
+            self.entries = json.loads(plain.decode())
+            self.show_home()
+
+        except (InvalidToken, ValueError, KeyError):
+            self.message("Mot de passe principal incorrect.")
+
+        except Exception:
+            self.message("Impossible d'ouvrir le coffre.")
+
+    def save_vault(self):
+        with open(self.file, "r") as f:
+            saved = json.load(f)
+
+        encrypted = Fernet(self.key).encrypt(
+            json.dumps(self.entries).encode()
+        )
+
+        saved["data"] = encrypted.decode()
+
+        with open(self.file, "w") as f:
+            json.dump(saved, f)
+
+    def show_home(self):
+        self.clear()
+
+        self.root.add_widget(
+            Label(text="TON COFFRE-FORT")
+        )
+
+        self.account = self.field("Nom du compte")
+        self.password = self.field(
+            "Mot de passe",
+            True
+        )
+
+        self.root.add_widget(self.account)
+        self.root.add_widget(self.password)
+
+        self.button("ENREGISTRER", self.add_entry)
+        self.button("RECHERCHER", self.search_entry)
+        self.button(
+            "GENERER UN MOT DE PASSE",
+            self.generate
+        )
+        self.button(
+            "AFFICHER TOUS LES COMPTES",
+            self.show_entries
+        )
+        self.button("VERROUILLER", self.lock)
+
+    def add_entry(self, instance):
+        name = self.account.text.strip()
+        password = self.password.text
+
+        if not name or not password:
+            self.message("Remplis les deux champs.")
+            return
+
+        self.entries.append({
+            "account": name,
+            "password": password
+        })
+
+        try:
+            self.save_vault()
+            self.account.text = ""
+            self.password.text = ""
+            self.message("Mot de passe enregistré.")
+        except Exception:
+            self.entries.pop()
+            self.message("Erreur pendant l'enregistrement.")
+
+    def search_entry(self, instance):
+        query = self.account.text.strip().lower()
+
+        matches = [
+            item for item in self.entries
+            if query in item["account"].lower()
+        ]
+
+        if not matches:
+            self.message("Aucun compte trouvé.")
+            return
+
+        item = matches[0]
+        self.password.text = item["password"]
+
+        self.message(
+            "Compte trouvé : " + item["account"]
+        )
+
+    def show_entries(self, instance):
+        names = [
+            item["account"] for item in self.entries
+        ]
+
+        self.message(
+            "Comptes enregistrés :\n" +
+            ("\n".join(names) if names else "Aucun compte")
+        )
+
+    def generate(self, instance):
+        chars = (
+            string.ascii_letters
+            + string.digits
+            + "!@#$%&*"
+        )
+
+        password = "".join(
+            secrets.choice(chars)
+            for _ in range(20)
+        )
+
+        self.password.text = password
+
+    def lock(self, instance):
+        self.key = None
+        self.entries = []
+        self.show_login()
+
+    def message(self, text):
         popup = Popup(
-            title="PASSWORD HISTORY",
-            content=content,
-            size_hint=(0.9, 0.8)
+            title="BACHARTELB",
+            content=Label(text=text),
+            size_hint=(0.85, 0.4)
         )
-
-        close_btn.bind(on_press=popup.dismiss)
         popup.open()
 
 
 if __name__ == "__main__":
-    BacharApp().run()
+    PasswordApp().run()
 
     
