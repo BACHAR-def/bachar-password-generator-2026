@@ -1,0 +1,12 @@
+from PIL import Image
+
+source = "/mnt/data/a_polished_app_logo_style_poster_in_a_dark_neon_cy.png"
+output = "/mnt/data/bachartelb_app_icon.png"
+
+img = Image.open(source).convert("RGB")
+# Crop the central crown, shield, lock, and BACHARTELB wordmark into a square app icon.
+crop = img.crop((248, 0, 1000, 752))
+crop = crop.resize((512, 512), Image.Resampling.LANCZOS)
+crop.save(output, format="PNG", optimize=True)
+
+print("Icône carrée créée :", output)
