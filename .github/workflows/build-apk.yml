@@ -1,3 +1,4 @@
+
 name: Build APK
 
 on:
@@ -5,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Recuperer le projet
@@ -30,7 +31,7 @@ jobs:
           mkdir -p "$SDK/tools/bin"
           ln -sf "$SDK/cmdline-tools/latest/bin/sdkmanager" "$SDK/tools/bin/sdkmanager"
           yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" --licenses
-          "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;27.3.13750724"
 
       - name: Installer Buildozer
         run: |
@@ -39,10 +40,18 @@ jobs:
 
       - name: Construire APK
         run: |
-          buildozer android debug
+          set -o pipefail
+          buildozer -v android debug 2>&1 | tee build.log
+
+      - name: Afficher les dernières erreurs
+        if: failure()
+        run: |
+          tail -n 100 build.log || true
 
       - name: Enregistrer APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: bachar-password-generator-apk
           path: bin/*.apk
+
