@@ -46,7 +46,10 @@ jobs:
       - name: Afficher les dernières erreurs
         if: failure()
         run: |
-          tail -n 100 build.log || true
+          echo "=== RECHERCHE DES ERREURS ==="
+          grep -inE "error|exception|failed|fatal|not found" build.log | tail -n 40 || true
+          echo "=== FIN DU JOURNAL ==="
+          tail -n 200 build.log || true
 
       - name: Enregistrer APK
         uses: actions/upload-artifact@v4
@@ -54,4 +57,5 @@ jobs:
         with:
           name: bachar-password-generator-apk
           path: bin/*.apk
+
 
