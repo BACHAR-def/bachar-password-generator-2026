@@ -1,4 +1,3 @@
-
 name: Build APK
 
 on:
@@ -28,6 +27,8 @@ jobs:
           unzip -q tools.zip
           mkdir -p "$SDK/cmdline-tools/latest"
           mv cmdline-tools/* "$SDK/cmdline-tools/latest/"
+          mkdir -p "$SDK/tools/bin"
+          ln -sf "$SDK/cmdline-tools/latest/bin/sdkmanager" "$SDK/tools/bin/sdkmanager"
           yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" --licenses
           "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
