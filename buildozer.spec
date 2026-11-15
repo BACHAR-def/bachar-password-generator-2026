@@ -1,6 +1,4 @@
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android.api = 33
-android.minapi = 21[app]
+[app]
 
 title = BACHAR PASSWORD GENERATOR PRO
 
@@ -24,3 +22,7 @@ android.permissions =
 
 log_level = 2
 warn_on_root = 1
+
+android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+android.api = 33
+android.minapi = 21
