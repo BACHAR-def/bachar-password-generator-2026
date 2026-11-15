@@ -10,7 +10,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 
 version = 1.0
-icon.filename = %(source.dir)s/fichier_000000006edc820ea88cece3dae54ce0.png
+icon.filename = %(source.dir)s/file_000000006edc820ea88cece3dae54ce0.png
 
 requirements = python3,kivy
 
@@ -30,3 +30,4 @@ p4a.branch = develop
 
 log_level = 2
 warn_on_root = 1
+
