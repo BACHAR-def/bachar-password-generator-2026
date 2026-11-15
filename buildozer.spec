@@ -14,8 +14,6 @@ icon.filename = %(source.dir)s/file_000000006edc820ea88cece3dae54ce0.png
 
 requirements = python3,kivy,cryptography
 
-android.archs = arm64-v8a
- 
 orientation = portrait
 fullscreen = 0
 
@@ -25,6 +23,7 @@ android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
 android.sdk_tools = cmdline-tools/latest
 android.api = 33
 android.minapi = 21
+android.archs = arm64-v8a
 
 p4a.branch = develop
 
@@ -32,4 +31,3 @@ p4a.branch = develop
 
 log_level = 2
 warn_on_root = 1
-
