@@ -1,3 +1,4 @@
+
 [app]
 
 title = BACHAR PASSWORD GENERATOR PRO
@@ -13,18 +14,19 @@ version = 1.0
 requirements = python3,kivy
 
 orientation = portrait
-
 fullscreen = 0
 
 android.permissions =
+
+android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+android.sdk_tools = cmdline-tools/latest
+android.api = 33
+android.minapi = 21
+
+p4a.branch = develop
 
 [buildozer]
 
 log_level = 2
 warn_on_root = 1
 
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android.sdk_tools = cmdline-tools/latest
-android.api = 33
-android.minapi = 21
-p4a.branch = develop
